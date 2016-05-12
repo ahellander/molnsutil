@@ -28,6 +28,7 @@
 
 import boto
 import boto.ec2
+import os
 from os import environ
 import logging
 from boto.s3.connection import S3Connection
@@ -70,7 +71,6 @@ import multiprocessing
 #     'aws_secret_access_key' : AWS private key
 #   s3.json needs to be created and put in .molns/s3.json in the root of the home directory.
 
-import os
 def get_persisistent_storage_config():
     """ Return the configuration for the persistent storage. """
     try:
@@ -80,7 +80,6 @@ def get_persisistent_storage_config():
     except IOError as e:
         logging.warning("Credentials file "+os.environ['HOME']+'/.molns/s3.json'+' missing. You will not be able to connect to S3 or Swift. Please create this file.')
         return {}
-
 
 
 class LocalStorage():
@@ -194,7 +193,7 @@ class S3Provider():
 class SwiftProvider():
     def __init__(self, bucket_name):
         s3config = get_persisistent_storage_config()
-        self.connection = swiftclient.client.Connection(auth_version=2.0,**s3config['credentials'])
+        self.connection = swiftclient.client.Connection(auth_version=s3config["auth_version"],**s3config['credentials'])
         self.set_bucket(bucket_name)
 
     def set_bucket(self,bucket_name):

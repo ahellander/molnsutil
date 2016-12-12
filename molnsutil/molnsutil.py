@@ -32,7 +32,7 @@ import os
 from os import environ
 import logging
 from boto.s3.connection import S3Connection
-logging.basicConfig(filename="boto.log", level=logging.DEBUG)
+#logging.basicConfig(filename="boto.log", level=logging.DEBUG)
 from boto.s3.key import Key
 import uuid
 import math
@@ -630,12 +630,7 @@ class DistributedEnsemble():
     #-----------------------------------------------------------------------------------
     def generate_seed_base(self):
         """ Create a random number and truncate to 64 bits. """
-        x = int(uuid.uuid4())
-        if x.bit_length() >= 64:
-            x = x & ((1<<64)-1)
-            if x > (1 << 63) -1:
-                x -= 1 << 64
-        return x
+        return abs(int(random.getrandbits(31)))
 
     #-----------------------------------------------------------------------------------
     def save_state(self):
@@ -1044,7 +1039,7 @@ class DistributedEnsemble():
     def _update_client(self, client=None):
         """ Setup the IPython.parallel.Client() object. """
         if client is None:
-            self.c = IPython.parallel.Client()
+            self.c = IPython.parallel.Client(profile='default')
         else:
             self.c = client
         if len(self.c.ids) == 0:
@@ -1125,7 +1120,7 @@ class ParameterSweep(DistributedEnsemble):
     def __init__(self, name=None, model_class=None, parameters=None, client=None, num_engines=None, ignore_model_mismatch=False):
         """ Constructor.
         Args:
-          model_class: a class object of the model for simulation, must be a sub-class of URDMEModel
+          model_class: a class object of the model for simulation
           parameters:  either a dict or a list.
             If it is a dict, the keys are the arguments to the class constructions and the
               values are a list of values that argument should take.

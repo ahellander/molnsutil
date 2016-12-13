@@ -86,17 +86,19 @@ def get_persisistent_storage_config():
 class LocalStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the ephemeral storage. """
+    import molnsutil.molns_cloudpickle as cp
+
 
     def __init__(self, folder_name="/home/ubuntu/localarea"):
         self.folder_name = folder_name
 
     def put(self, filename, data):
         with open(self.folder_name+"/"+filename,'wb') as fh:
-            cloudpickle.dump(data,fh)
+            cp.dump(data,fh)
 
     def get(self, filename):
         with open(self.folder_name+"/"+filename, 'rb') as fh:
-            data = cloudpickle.load(fh)
+            data = cp.load(fh)
         return data
 
     def delete(self,filename):
@@ -105,6 +107,7 @@ class LocalStorage():
 class SharedStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the sshfs mounted storage on the controller. """
+    import molnsutil.molns_cloudpickle as cp
 
     def __init__(self, serialization_method="cloudpickle"):
         self.folder_name = "/home/ubuntu/shared"
@@ -113,14 +116,14 @@ class SharedStorage():
     def put(self, filename, data):
         with open(self.folder_name+"/"+filename,'wb') as fh:
             if self.serialization_method == "cloudpickle":
-                cloudpickle.dump(data,fh)
+                cp.dump(data,fh)
             elif self.serialization_method == "json":
                 json.dump(data,fh)
 
     def get(self, filename):
         with open(self.folder_name+"/"+filename, 'rb') as fh:
             if self.serialization_method == "cloudpickle":
-                data = cloudpickle.loads(fh.read())
+                data = cp.loads(fh.read())
             elif self.serialization_method == "json":
                 data = json.loads(fh.read())
         return data
@@ -255,6 +258,8 @@ class PersistentStorage():
        Provides an abstaction for interacting with the Object Stores
        of the supported clouds.
     """
+    import molnsutil.molns_cloudpickle as cp
+
 
     def __init__(self, bucket_name=None):
         s3config = get_persisistent_storage_config()
@@ -307,11 +312,11 @@ class PersistentStorage():
 
     def put(self, name, data):
         self.setup_provider()
-        self.provider.put(name, cloudpickle.dumps(data))
+        self.provider.put(name, cp.dumps(data))
 
     def get(self, name, validate=False):
         self.setup_provider()
-        return cloudpickle.loads(self.provider.get(name, validate))
+        return cp.loads(self.provider.get(name, validate))
 
     def delete(self, name):
         """ Delete an object. """
@@ -330,6 +335,8 @@ class PersistentStorage():
 
 
 class CachedPersistentStorage(PersistentStorage):
+    import molnsutil.molns_cloudpickle as cp
+    
     def __init__(self, bucket_name=None):
         PersistentStorage.__init__(self,bucket_name)
         self.cache = LocalStorage(folder_name = "/mnt/molnsarea/cache")
@@ -338,9 +345,9 @@ class CachedPersistentStorage(PersistentStorage):
         self.setup_provider()
         # Try to read it form cache
         try:
-            data = cloudpickle.loads(self.cache.get(name))
+            data = cp.loads(self.cache.get(name))
         except: # if not there, read it from the Object Store and write it to the cache
-            data = cloudpickle.loads(self.provider.get(name, validate))
+            data = cp.loads(self.provider.get(name, validate))
             try:
                 self.cache.put(name, data)
             except:
@@ -401,11 +408,13 @@ def run_ensemble_map_and_aggregate(model_class, parameters, param_set_id, seed_b
     """ Generate an ensemble, then run the mappers are aggreator.  This will not store the results. """
     import sys
     import uuid
+    import molnsutil.molns_cloudpickle as cp
+
     if aggregator is None:
         aggregator = builtin_aggregator_list_append
     # Create the model
     try:
-        model_class_cls = cloudpickle.loads(model_class)
+        model_class_cls = cp.loads(model_class)
         if parameters is not None:
             model = model_class_cls(**parameters)
         else:
@@ -463,6 +472,8 @@ def run_ensemble(model_class, parameters, param_set_id, seed_base, number_of_tra
     import sys
     import uuid
     from molnsutil import PersistentStorage, LocalStorage, SharedStorage
+    import molnsutil.molns_cloudpickle as cp
+
 
     if storage_mode=="Shared":
         storage  = SharedStorage()
@@ -472,7 +483,7 @@ def run_ensemble(model_class, parameters, param_set_id, seed_base, number_of_tra
         raise MolnsUtilException("Unknown storage type '{0}'".format(storage_mode))
     # Create the model
     try:
-        model_class_cls = cloudpickle.loads(model_class)
+        model_class_cls = cp.loads(model_class)
         if parameters is not None:
             model = model_class_cls(**parameters)
         else:

@@ -85,7 +85,7 @@ def get_persisistent_storage_config():
 class LocalStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the ephemeral storage. """
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
 
 
     def __init__(self, folder_name="/home/ubuntu/localarea"):
@@ -106,7 +106,7 @@ class LocalStorage():
 class SharedStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the sshfs mounted storage on the controller. """
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
 
     def __init__(self, serialization_method="cloudpickle"):
         self.folder_name = "/home/ubuntu/shared"
@@ -257,7 +257,7 @@ class PersistentStorage():
        Provides an abstaction for interacting with the Object Stores
        of the supported clouds.
     """
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
 
 
     def __init__(self, bucket_name=None):
@@ -334,7 +334,7 @@ class PersistentStorage():
 
 
 class CachedPersistentStorage(PersistentStorage):
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
     
     def __init__(self, bucket_name=None):
         PersistentStorage.__init__(self,bucket_name)
@@ -407,7 +407,7 @@ def run_ensemble_map_and_aggregate(model_class, parameters, param_set_id, seed_b
     """ Generate an ensemble, then run the mappers are aggreator.  This will not store the results. """
     import sys
     import uuid
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
 
     if aggregator is None:
         aggregator = builtin_aggregator_list_append
@@ -471,7 +471,7 @@ def run_ensemble(model_class, parameters, param_set_id, seed_base, number_of_tra
     import sys
     import uuid
     from molnsutil import PersistentStorage, LocalStorage, SharedStorage
-    import molnsutil.molns_cloudpickle as cp
+    import molns_cloudpickle as cp
 
 
     if storage_mode=="Shared":

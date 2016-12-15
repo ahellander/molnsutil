@@ -1031,6 +1031,12 @@ class DistributedEnsemble():
     def mean(self, mapper=None, number_of_trajectories=None, chunk_size=None, verbose=True, store_realizations=True, storage_mode="Shared", cache_results=False):
         """ Compute the mean of the function g(X) based on number_of_trajectories realizations
             in the ensemble. It has to make sense to say g(result1)+g(result2). """
+
+        # Use the total trajectories in the ensemble as default. 
+        if number_of_trajectories == None:
+            if self.number_of_trajectories != None: 
+                number_of_trajectories = self.number_of_trajectories
+                
         return self.run(mapper=mapper, aggregator=builtin_aggregator_add, reducer=builtin_reducer_mean, number_of_trajectories=number_of_trajectories, chunk_size=chunk_size, verbose=verbose, store_realizations=store_realizations, storage_mode=storage_mode, cache_results=cache_results)
 
 

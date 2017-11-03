@@ -36,17 +36,20 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import uuid
 import math
-import molnsutil.molns_cloudpickle as cloudpickle
+import molns_cloudpickle as cloudpickle
 import random
 import copy
 import inspect
 
-import swiftclient.client
 import IPython.parallel
 import uuid
 from IPython.display import HTML, Javascript, display
 import os
 import sys
+
+import swiftclient.client
+from keystoneauth1 import session
+from keystoneauth1.identity import v3
 
 import itertools
 
@@ -85,8 +88,6 @@ def get_persisistent_storage_config():
 class LocalStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the ephemeral storage. """
-    import molnsutil.molns_cloudpickle as cp
-
 
     def __init__(self, folder_name="/home/ubuntu/localarea"):
         self.folder_name = folder_name
@@ -106,7 +107,6 @@ class LocalStorage():
 class SharedStorage():
     """ This class provides an abstraction for storing and reading objects on/from
         the sshfs mounted storage on the controller. """
-    import molnsutil.molns_cloudpickle as cp
 
     def __init__(self, serialization_method="cloudpickle"):
         self.folder_name = "/home/ubuntu/shared"
@@ -196,7 +196,22 @@ class S3Provider():
 class SwiftProvider():
     def __init__(self, bucket_name):
         s3config = get_persisistent_storage_config()
-        self.connection = swiftclient.client.Connection(auth_version=s3config["auth_version"],**s3config['credentials'])
+        
+        if s3config["auth_version"] == 3:
+            v2config = s3config["credentials"]
+            v3config = {}
+            v3config["user_domain_name"] = "snic"
+            v3config["project_domain_name"] = "snic"
+            v3config["username"]=v2config["user"]
+            v3config["auth_url"] = v2config["authurl"]
+            v3config["password"] = v2config["key"]
+            v3config["project_name"] = v2config["tenant_name"]
+            auth = v3.Password(**v3config)
+            keystone_session = session.Session(auth=auth)
+            self.connection = swiftclient.client.Connection(session=keystone_session)
+        else:
+            self.connection = swiftclient.client.Connection(auth_version=s3config["auth_version"],**s3config['credentials'])
+        
         self.set_bucket(bucket_name)
 
     def set_bucket(self,bucket_name):
@@ -257,8 +272,6 @@ class PersistentStorage():
        Provides an abstaction for interacting with the Object Stores
        of the supported clouds.
     """
-    import molnsutil.molns_cloudpickle as cp
-
 
     def __init__(self, bucket_name=None):
         s3config = get_persisistent_storage_config()
@@ -334,7 +347,6 @@ class PersistentStorage():
 
 
 class CachedPersistentStorage(PersistentStorage):
-    import molnsutil.molns_cloudpickle as cp
     
     def __init__(self, bucket_name=None):
         PersistentStorage.__init__(self,bucket_name)
@@ -407,7 +419,6 @@ def run_ensemble_map_and_aggregate(model_class, parameters, param_set_id, seed_b
     """ Generate an ensemble, then run the mappers are aggreator.  This will not store the results. """
     import sys
     import uuid
-    import molnsutil.molns_cloudpickle as cp
 
     if aggregator is None:
         aggregator = builtin_aggregator_list_append
@@ -471,7 +482,6 @@ def run_ensemble(model_class, parameters, param_set_id, seed_base, number_of_tra
     import sys
     import uuid
     from molnsutil import PersistentStorage, LocalStorage, SharedStorage
-    import molnsutil.molns_cloudpickle as cp
 
 
     if storage_mode=="Shared":
